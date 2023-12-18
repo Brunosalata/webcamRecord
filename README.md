@@ -1,4 +1,4 @@
-# Webcam Video Record
+# Webcam Video Record for JavaFX (Simple and Functional)
 
 ## <p>Technologies</p>
 
