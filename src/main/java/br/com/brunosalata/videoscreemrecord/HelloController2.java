@@ -40,7 +40,7 @@ import io.humble.video.awt.MediaPictureConverter;
 import io.humble.video.awt.MediaPictureConverterFactory;
 import javafx.stage.Window;
 
-public class HelloController implements Initializable {
+public class HelloController2 implements Initializable {
     @FXML
     private ImageView imgView;
     private static Webcam webcam;
@@ -50,8 +50,9 @@ public class HelloController implements Initializable {
     private TextField txtCounting, txtTime;
     @FXML
     private ComboBox<Webcam> cbWebcamOptions;
-    private static volatile boolean videoRecording = false;
-    private volatile boolean webcamOpened = false;
+    private boolean videoStoped = true;
+    private volatile boolean videoRecording = false;
+    private DecimalFormat decimal = new DecimalFormat("HH:mm:ss");
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -79,7 +80,7 @@ public class HelloController implements Initializable {
     private void openWebcam() throws IOException, InterruptedException, AWTException {
 
         webcam.open();
-        webcamOpened = true;
+        videoStoped = false;
 
         AtomicLong frameCounter = new AtomicLong(0);
         AtomicLong lastFPSCheckTime = new AtomicLong(System.currentTimeMillis());
@@ -87,7 +88,7 @@ public class HelloController implements Initializable {
 
         Platform.runLater(() -> {
             Thread videoRec = new Thread(() -> {
-                while (webcamOpened) {
+                while (!videoStoped) {
                     Image image = SwingFXUtils.toFXImage(webcam.getImage(), null);
 //                    Image image = convertToFxImage(webcam.getImage());
                     imgView.setImage(image);
@@ -108,7 +109,7 @@ public class HelloController implements Initializable {
                     });
 
                     try {
-                        Thread.sleep(15); // Aguarda 15ms para o próximo quadro
+                        Thread.sleep(10); // Aguarda 50ms para o próximo quadro
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
@@ -123,7 +124,7 @@ public class HelloController implements Initializable {
 
     @FXML
     private void closeWebcam(){
-        webcamOpened = false;
+        videoStoped = true;
     }
 
     /**
@@ -149,178 +150,113 @@ public class HelloController implements Initializable {
     @FXML
     protected void takePic() {
 
-        boolean notOpenedWebcamMode = false;
-        if (!webcamOpened) {
+        if (videoStoped) {
             Webcam webcam = Webcam.getDefault();
-            notOpenedWebcamMode = true;
-        }
 
-        if (webcam != null) {
-            webcam.addWebcamListener(new WebcamListener() {
-                @Override
-                public void webcamOpen(WebcamEvent webcamEvent) {
-                    System.out.println("Webcam opened");
-                }
+            if (webcam != null) {
+                webcam.addWebcamListener(new WebcamListener() {
+                    @Override
+                    public void webcamOpen(WebcamEvent webcamEvent) {
+                        System.out.println("Webcam opened");
+                    }
 
-                @Override
-                public void webcamClosed(WebcamEvent webcamEvent) {
-                    System.out.println("Webcam closed");
-                }
+                    @Override
+                    public void webcamClosed(WebcamEvent webcamEvent) {
+                        System.out.println("Webcam closed");
+                    }
 
-                @Override
-                public void webcamDisposed(WebcamEvent webcamEvent) {
-                    System.out.println("Webcam Disposed");
-                }
+                    @Override
+                    public void webcamDisposed(WebcamEvent webcamEvent) {
+                        System.out.println("Webcam Disposed");
+                    }
 
-                @Override
-                public void webcamImageObtained(WebcamEvent webcamEvent) {
-                    System.out.println("Image taken ");
-                }
-            });
+                    @Override
+                    public void webcamImageObtained(WebcamEvent webcamEvent) {
+                        System.out.println("Image taken ");
+                    }
+                });
 
-            webcam.setViewSize(new Dimension(640, 480));
-            webcam.setViewSize(WebcamResolution.VGA.getSize());
+                webcam.setViewSize(new Dimension(640, 480));
+                webcam.setViewSize(WebcamResolution.VGA.getSize());
 
-            if(notOpenedWebcamMode){
                 webcam.open();
-            }
-            try {
-                ImageIO.write(webcam.getImage(), "PNG", new File("firstCapture.png"));
-                if(notOpenedWebcamMode){
+                try {
+                    ImageIO.write(webcam.getImage(), "PNG", new File("firstCapture.png"));
                     webcam.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            } else {
+                System.out.println("Webcam disconnected");
             }
-        } else {
-            System.out.println("Webcam disconnected");
         }
     }
 
     @FXML
-    private void startRecord() {
+    private void startRecord() throws IOException, InterruptedException, AWTException {
 
         videoRecording = true;
 
         new Thread(() -> {
-            try {
-                recordScreen("output.mp4", null, null, 0, 30);
-            } catch (AWTException | IOException | InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            Platform.runLater(() -> {
+                try {
+                    recordScreen("output.mp4", null, null, 10, 5);
+                } catch (AWTException | IOException | InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            });
         }).start();
     }
 
     /**
      * Records the screen
      */
-    private static void recordScreen(String filename, String formatname, String codecname, int duration, int snapsPerSecond) throws AWTException, InterruptedException, IOException {
-        /**
-         * Set up the AWT infrastructure to take screenshots of the desktop.
-         */
+    private void recordScreen(String filename, String formatname, String codecname, int duration, int snapsPerSecond) throws AWTException, InterruptedException, IOException {
 
-        final Rectangle size = new Rectangle(webcam.getViewSize());
-        final Rational framerate = Rational.make(1, snapsPerSecond);
+//        if(hbOutputRecArea!=null){
+//            Rectangle captureRect = new Rectangle((int) hbOutputRecArea.getBoundsInParent().getWidth(),
+//                    (int) hbOutputRecArea.getBoundsInParent().getHeight());
+//        } else{
+//        }
 
-        /** First we create a muxer using the passed in filename and formatname if given. */
-        final Muxer muxer = Muxer.make(filename, null, formatname);
+//        Rectangle captureRect = new Rectangle(Window.getWindows().size(), 500);
+        Rectangle captureRect = new Rectangle(webcam.getViewSize());
 
-        /**
-         * Now, we need to decide what type of codec to use to encode video. Muxers have limited
-         * sets of codecs they can use. We're going to pick the first one that works, or if the user
-         * supplied a codec name, we're going to force-fit that in instead.
-         */
-        final MuxerFormat format = muxer.getFormat();
-        final Codec codec;
-        if (codecname != null) {
-            codec = Codec.findEncodingCodecByName(codecname);
-        } else {
-            codec = Codec.findEncodingCodec(format.getDefaultVideoCodecId());
-        }
+        Robot robot = new Robot();
+        Muxer muxer = Muxer.make(filename, null, formatname);
 
-        /**
-         * Now that we know what codec, we need to create an encoder
-         */
-        Encoder encoder = Encoder.make(codec);
+        Rational framerate = Rational.make(1, snapsPerSecond);
 
-        /**
-         * Video encoders need to know at a minimum: width height pixel format Some also need to
-         * know frame-rate (older codecs that had a fixed rate at which video files could be written
-         * needed this). There are many other options you can set on an encoder, but we're going to
-         * keep it simpler here.
-         */
-        encoder.setWidth(size.width);
-        encoder.setHeight(size.height);
-        // We are going to use 420P as the format because that's what most video formats these days
-        // use
-        final PixelFormat.Type pixelformat = PixelFormat.Type.PIX_FMT_YUV420P;
-        encoder.setPixelFormat(pixelformat);
+        Encoder encoder = Encoder.make(Codec.findEncodingCodecByName(codecname));
+
+        encoder.setWidth(captureRect.width);
+        encoder.setHeight(captureRect.height);
+        encoder.setPixelFormat(PixelFormat.Type.PIX_FMT_YUV420P);
         encoder.setTimeBase(framerate);
 
-        /**
-         * An annoynace of some formats is that they need global (rather than per-stream) headers,
-         * and in that case you have to tell the encoder. And since Encoders are decoupled from
-         * Muxers, there is no easy way to know this beyond
-         */
-        if (format.getFlag(MuxerFormat.Flag.GLOBAL_HEADER))
+        if (muxer.getFormat().getFlag(MuxerFormat.Flag.GLOBAL_HEADER)) {
             encoder.setFlag(Encoder.Flag.FLAG_GLOBAL_HEADER, true);
+        }
 
-        /** Open the encoder. */
         encoder.open(null, null);
-
-        /** Add this stream to the muxer. */
         muxer.addNewStream(encoder);
-
-        /** And open the muxer for business. */
         muxer.open(null, null);
 
-        /**
-         * Next, we need to make sure we have the right MediaPicture format objects to encode data
-         * with. Java (and most on-screen graphics programs) use some variant of Red-Green-Blue
-         * image encoding (a.k.a. RGB or BGR). Most video codecs use some variant of YCrCb
-         * formatting. So we're going to have to convert. To do that, we'll introduce a
-         * MediaPictureConverter object later. object.
-         */
         MediaPictureConverter converter = null;
-        final MediaPicture picture = MediaPicture
-                .make(
-                        encoder.getWidth(),
-                        encoder.getHeight(),
-                        pixelformat);
+        MediaPicture picture = MediaPicture.make(encoder.getWidth(), encoder.getHeight(), PixelFormat.Type.PIX_FMT_BGR24);
+
         picture.setTimeBase(framerate);
 
-        /**
-         * Open webcam so we can capture video feed.
-         */
+        MediaPacket packet = MediaPacket.make();
 
-        // Already opened
-//        webcam.open();
+        long startTime = System.nanoTime();
 
-        /**
-         * Now begin our main loop of taking screen snaps. We're going to encode and then write out
-         * any resulting packets.
-         */
-        final MediaPacket packet = MediaPacket.make();
-//        for (int i = 0; i < duration / framerate.getDouble(); i++) {
-        int i = 0;
-        while(videoRecording){
-
-            /**
-             * Make the screen capture && convert image to TYPE_3BYTE_BGR
-             */
-            final BufferedImage image = webcam.getImage();
-            final BufferedImage frame = convertToType(image, BufferedImage.TYPE_3BYTE_BGR);
-
-            System.out.println("Record frame " + frame);
-
-            /**
-             * This is LIKELY not in YUV420P format, so we're going to convert it using some handy
-             * utilities.
-             */
+        while (videoRecording) {
+            BufferedImage frame = robot.createScreenCapture(captureRect);
             if (converter == null) {
                 converter = MediaPictureConverterFactory.createConverter(frame, picture);
             }
-            converter.toPicture(picture, frame, i);
+            converter.toPicture(picture, frame, System.nanoTime() - startTime);
 
             do {
                 encoder.encode(packet, picture);
@@ -329,17 +265,9 @@ public class HelloController implements Initializable {
                 }
             } while (packet.isComplete());
 
-            i++;
-
-            /** now we'll sleep until it's time to take the next snapshot. */
             Thread.sleep((long) (1000 * framerate.getDouble()));
         }
 
-        /**
-         * Encoders, like decoders, sometimes cache pictures so it can do the right key-frame
-         * optimizations. So, they need to be flushed as well. As with the decoders, the convention
-         * is to pass in a null input until the output is not complete.
-         */
         do {
             encoder.encode(packet, null);
             if (packet.isComplete()) {
@@ -347,17 +275,12 @@ public class HelloController implements Initializable {
             }
         } while (packet.isComplete());
 
-        /**
-         * Finally, let's clean up after ourselves.
-         */
-
-//        webcam.close();
         muxer.close();
     }
 
     @FXML
     private void stopRecord(){
-        videoRecording = false;
+
     }
 
     /**
