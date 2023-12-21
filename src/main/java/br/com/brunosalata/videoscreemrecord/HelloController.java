@@ -56,8 +56,8 @@ public class HelloController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         webcam = Webcam.getDefault();
-//        webcam.setViewSize(WebcamResolution.VGA.getSize());
-        webcam.setViewSize(new Dimension(640,480));
+        webcam.setViewSize(WebcamResolution.VGA.getSize());
+//        webcam.setViewSize(new Dimension(640,480));
 //        webcam.open();
 
         webcamList();
@@ -204,7 +204,7 @@ public class HelloController implements Initializable {
 
         new Thread(() -> {
             try {
-                recordScreen("output.mp4", null, null, 0, 30);
+                recordScreen("output.mp4", null, null, 0, 15);
             } catch (AWTException | IOException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -218,7 +218,7 @@ public class HelloController implements Initializable {
         /**
          * Set up the AWT infrastructure to take screenshots of the desktop.
          */
-
+//        Rectangle size = new Rectangle(580,300, 730, 240);
         final Rectangle size = new Rectangle(webcam.getViewSize());
         final Rational framerate = Rational.make(1, snapsPerSecond);
 
@@ -303,13 +303,21 @@ public class HelloController implements Initializable {
         final MediaPacket packet = MediaPacket.make();
 //        for (int i = 0; i < duration / framerate.getDouble(); i++) {
         int i = 0;
+        Robot robot = new Robot();
+
+        BufferedImage image = null;
         while(videoRecording){
 
             /**
              * Make the screen capture && convert image to TYPE_3BYTE_BGR
              */
-            final BufferedImage image = webcam.getImage();
-            final BufferedImage frame = convertToType(image, BufferedImage.TYPE_3BYTE_BGR);
+//            image = webcam.getImage();
+
+            image = robot.createScreenCapture(size);
+
+            }
+        assert image != null;
+        final BufferedImage frame = convertToType(image, BufferedImage.TYPE_3BYTE_BGR);
 
             System.out.println("Record frame " + frame);
 
@@ -333,7 +341,7 @@ public class HelloController implements Initializable {
 
             /** now we'll sleep until it's time to take the next snapshot. */
             Thread.sleep((long) (1000 * framerate.getDouble()));
-        }
+
 
         /**
          * Encoders, like decoders, sometimes cache pictures so it can do the right key-frame

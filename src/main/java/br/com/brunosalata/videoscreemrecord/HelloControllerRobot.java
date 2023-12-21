@@ -2,8 +2,6 @@ package br.com.brunosalata.videoscreemrecord;
 
 import com.github.sarxos.webcam.*;
 import javafx.application.Platform;
-import javafx.application.Preloader;
-import javafx.collections.ListChangeListener;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -11,17 +9,14 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.*;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.IntBuffer;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.List;
@@ -29,7 +24,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import io.humble.video.Codec;
 import io.humble.video.Encoder;
-import io.humble.video.MediaAudio;
 import io.humble.video.MediaPacket;
 import io.humble.video.MediaPicture;
 import io.humble.video.Muxer;
@@ -38,9 +32,8 @@ import io.humble.video.PixelFormat;
 import io.humble.video.Rational;
 import io.humble.video.awt.MediaPictureConverter;
 import io.humble.video.awt.MediaPictureConverterFactory;
-import javafx.stage.Window;
 
-public class HelloController2 implements Initializable {
+public class HelloControllerRobot implements Initializable {
     @FXML
     private ImageView imgView;
     private static Webcam webcam;
@@ -109,7 +102,7 @@ public class HelloController2 implements Initializable {
                     });
 
                     try {
-                        Thread.sleep(10); // Aguarda 50ms para o próximo quadro
+                        Thread.sleep(15); // Aguarda 50ms para o próximo quadro
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
@@ -193,19 +186,24 @@ public class HelloController2 implements Initializable {
     }
 
     @FXML
-    private void startRecord() throws IOException, InterruptedException, AWTException {
+    private void startRecord() throws AWTException {
+        Robot robot = new Robot();
+        Rectangle rectangle = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
+        BufferedImage image = robot.createScreenCapture(rectangle);
 
-        videoRecording = true;
+        Image myImage = SwingFXUtils.toFXImage(image, null);
+        imgView.setImage(myImage);
+    }
 
-        new Thread(() -> {
-            Platform.runLater(() -> {
-                try {
-                    recordScreen("output.mp4", null, null, 10, 5);
-                } catch (AWTException | IOException | InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        }).start();
+    @FXML
+    private void startRecParcial() throws AWTException {
+        Robot robot = new Robot();
+//        Rectangle rectangle = new Rectangle(0,0, (int) hbOutputRecArea.getWidth(), (int) hbOutputRecArea.getHeight());
+        Rectangle rectangle = new Rectangle(580,300, 730, 240);
+        BufferedImage image = robot.createScreenCapture(rectangle);
+
+        Image myImage = SwingFXUtils.toFXImage(image, null);
+        imgView.setImage(myImage);
     }
 
     /**
