@@ -30,12 +30,12 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class HelloController implements Initializable {
+public class HelloControllerBoofCV implements Initializable {
     @FXML
     private ImageView imgView;
     private static Webcam webcam;
     @FXML
-    private static HBox hbOutputRecArea;
+    private HBox hbOutputRecArea;
     @FXML
     private VBox root;
     @FXML
@@ -305,8 +305,8 @@ public class HelloController implements Initializable {
              */
 //            image = webcam.getImage();
 
-//            image = robot.createScreenCapture(size);
-            image = SwingFXUtils.fromFXImage(hbOutputRecArea.snapshot(new SnapshotParameters(), null), null);
+            image = robot.createScreenCapture(size);
+
             }
         assert image != null;
         final BufferedImage frame = convertToType(image, BufferedImage.TYPE_3BYTE_BGR);
@@ -394,7 +394,7 @@ public class HelloController implements Initializable {
 
     @FXML
     private void screenshot(){
-        WritableImage image = hbOutputRecArea.snapshot(new SnapshotParameters(), null);
+        WritableImage image = root.snapshot(new SnapshotParameters(), null);
         imgView.setImage(image);
     }
 }

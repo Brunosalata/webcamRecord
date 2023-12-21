@@ -8,8 +8,14 @@ module br.com.brunosalata.videoscreemrecord {
     requires uk.co.caprica.vlcj;
     requires org.bytedeco.javacv;
     requires org.bytedeco.opencv;
+    requires feature;
+
+    requires visualize;
+    requires io;
+
 
 
     opens br.com.brunosalata.videoscreemrecord to javafx.fxml;
     exports br.com.brunosalata.videoscreemrecord;
+
 }
